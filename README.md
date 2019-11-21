@@ -1,4 +1,4 @@
-## CNN Image Retrieval in PyTorch: Training and evaluating CNNs for Image Retrieval in PyTorch
+### CNN Image Retrieval in PyTorch: Training and evaluating CNNs for Image Retrieval in PyTorch
 
 This is a Python toolbox that implements the training and testing of the approach described in our papers:
 
