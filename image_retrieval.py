@@ -11,9 +11,9 @@ data: 2019-11-23 18:25
 desc:
 '''
 
-from retrieval_feature import *
-from retrieval_index import *
-from classify import class_results
+from utils.retrieval_feature import *
+from utils.retrieval_index import *
+from utils.classify import class_results
 from PIL import  Image
 from PIL import Image, ImageFile, TiffImagePlugin
 
