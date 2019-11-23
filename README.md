@@ -4,30 +4,25 @@
     --技术：深度卷积神经网络技术、LSH局部敏感哈希算法、flask web端部署
 
 ## 2.预训练模型
-    --图像检索预训练模型：https://pan.baidu.com/s/12BUjjwy1uUTEF9HCx5qvoQ
+    --图像检索预训练模型：http://cmp.felk.cvut.cz/cnnimageretrieval/data/whiten/retrieval-SfM-120k/retrieval-SfM-120k-vgg16-gem-r-rwhiten-19b204e.pth
 
 ## 3.数据集
-    --face recognition数据集：LFW人脸识别数据集（官网提供下载）
-      --相同人脸随机构成pairs对，label(y)均设置为0.（同一人的pairs对的风险值相同）
-    --KYD风险人脸数据集：采集带有风险值（label）的图像数据集
-      --随机构成人脸pairs对，label（y）为风险值的差值.
-
+    --训练数据集：针对业务数据进行迁移学习
+    --生产上数据集查重
+   
 ## 4.数据预处理
-    数据大小处理为（112*112）
-    --LFW数据集：同一人的不同图片构成pairs对，写入csv文件便于后续训练
-    --KYD数据集：所有训练数据随机构成pairs对，无需处理，训练时batch中会进行随机配对
+    数据大小处理为（224*224）
+    --筛选出tiff、tif等格式文件，并解决pillow的底层问题（opencv解决conver（“RGB”）问题）
+    --数据分类筛选：采用nts网络进行细粒度分类
     
-## 5.模型训练
-    --batch训练：读取LFW文件，每次随机取64对图像输入到batch；随机在dataloader中取64对KYD图片对输入到batch（batch=12），确定训练时两组不同          的数据比例为1：1，保证训练出的模型gini高，方差低
-    --loss函数:采用soft_bce loss函数作为模型收敛的策略函数
-    --分布式训练 python train.py
-    --单卡测试 python test.py
-    --demo
-    
-    
+## 5.模型业务使用
+    --分类：python classify.py
+    --特征提取：python retrieval_feature.py
+    --图像离线检索：python retrieval_index.py
+    --在线部署：python interface.py (采用flask框架部署，同时离线更新数据库)
+       
 ## 6.指标
-    --gini系数
-    --同一人不用人脸的风险系数方差std
-     代码地址：git clone https://github.com/yinhaoxss/Arcface_RankNet.git
+    --map：0.93
+    
 
   
