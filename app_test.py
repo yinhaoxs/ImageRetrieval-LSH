@@ -15,7 +15,7 @@ import requests
 import time
 import hashlib
 import sys
-import os
+import os, torch
 
 URL = "http://0.0.0.0：15788/images_retrieval"
 
