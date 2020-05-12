@@ -6,6 +6,7 @@
 ## 2.预训练模型
     --图像分类预训练模型：https://drive.google.com/file/d/1F-eKqPRjlya5GH2HwTlLKNSPEUaxCu9H/view?usp=sharing
     --图像检索预训练模型：http://cmp.felk.cvut.cz/cnnimageretrieval/data/whiten/retrieval-SfM-120k/retrieval-SfM-120k-vgg16-gem-r-rwhiten-19b204e.pth
+        resnet50 http://cmp.felk.cvut.cz/cnnimageretrieval/data/networks/gl18/gl18-tl-resnet50-gem-w-83fdc30.pth
 
 ## 3.数据集
     --生产上数据集进行迁移学习并查重
