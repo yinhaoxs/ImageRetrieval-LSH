@@ -10,7 +10,6 @@ from cirtorch.datasets.datahelpers import default_loader, imresize
 class ImagesFromList(data.Dataset):
     """A generic data loader that loads images from a list 
         (Based on ImageFolder from pytorch)
-
     Args:
         root (string): Root directory path.
         images (list): Relative image paths as strings.
@@ -19,7 +18,6 @@ class ImagesFromList(data.Dataset):
         transform (callable, optional): A function/transform that  takes in an PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         loader (callable, optional): A function to load an image given its path.
-
      Attributes:
         images_fn (list): List of full image filename
     """
@@ -43,7 +41,6 @@ class ImagesFromList(data.Dataset):
         """
         Args:
             index (int): Index
-
         Returns:
             image (PIL): Loaded image
         """
@@ -63,7 +60,7 @@ class ImagesFromList(data.Dataset):
         if self.transform is not None:
             img = self.transform(img)
 
-        return img
+        return img, path
 
     def __len__(self):
         return len(self.images_fn)
@@ -79,7 +76,6 @@ class ImagesFromList(data.Dataset):
 class ImagesFromDataList(data.Dataset):
     """A generic data loader that loads images given as an array of pytorch tensors
         (Based on ImageFolder from pytorch)
-
     Args:
         images (list): Images as tensors.
         transform (callable, optional): A function/transform that image as a tensors
@@ -98,7 +94,6 @@ class ImagesFromDataList(data.Dataset):
         """
         Args:
             index (int): Index
-
         Returns:
             image (Tensor): Loaded image
         """
