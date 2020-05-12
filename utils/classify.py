@@ -6,7 +6,6 @@ Author: yinhao
 Email: yinhao_x@163.com
 Wechat: xss_yinhao
 Github: http://github.com/yinhaoxs
-
 data: 2019-11-23 18:29
 desc:
 '''
@@ -23,14 +22,13 @@ import shutil
 import numpy as np
 import pandas as pd
 from PIL import Image
-from torchvision  import transforms
+from torchvision import transforms
 from torch.utils.data import DataLoader, Dataset
 import os
 import time
 from collections import OrderedDict
 
-
-#config.py
+# config.py
 BATCH_SIZE = 16
 PROPOSAL_NUM = 6
 CAT_NUM = 4
@@ -39,7 +37,7 @@ DROP_OUT = 0.5
 CLASS_NUM = 37
 
 
-#resnet.py
+# resnet.py
 def conv3x3(in_planes, out_planes, stride=1):
     "3x3 convolution with padding"
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
@@ -204,7 +202,7 @@ class ProposalNet(nn.Module):
 class AttentionNet(nn.Module):
     def __init__(self, topN=4):
         super(attention_net, self).__init__()
-        self.pretrained_model = ResNet(Bottleneck, [3,4,6,3])
+        self.pretrained_model = ResNet(Bottleneck, [3, 4, 6, 3])
         self.pretrained_model.avgpool = nn.AdaptiveAvgPool2d(1)
         self.pretrained_model.fc = nn.Linear(512 * 4, 200)
         self.proposal_net = ProposalNet()
@@ -267,7 +265,6 @@ def ranking_loss(score, targets, proposal_num=PROPOSAL_NUM):
     return loss / batch_size
 
 
-
 # anchors.py
 _default_anchors_setting = (
     dict(layer='p3', stride=32, size=48, scale=[2 ** (1. / 3.), 2 ** (2. / 3.)], aspect_ratio=[0.667, 1, 1.5]),
@@ -279,7 +276,6 @@ _default_anchors_setting = (
 def generate_default_anchor_maps(anchors_setting=None, input_shape=INPUT_SIZE):
     """
     generate default anchor
-
     :param anchors_setting: all informations of anchors
     :param input_shape: shape of input images, e.g. (h, w)
     :return: center_anchors: # anchors * 4 (oy, ox, h, w)
@@ -353,253 +349,234 @@ def hard_nms(cdds, topn=10, iou_thresh=0.25):
         intersec_map = lengths[:, 0] * lengths[:, 1]
         intersec_map[np.logical_or(lengths[:, 0] < 0, lengths[:, 1] < 0)] = 0
         iou_map_cur = intersec_map / ((res[:, 3] - res[:, 1]) * (res[:, 4] - res[:, 2]) + (cdd[3] - cdd[1]) * (
-            cdd[4] - cdd[2]) - intersec_map)
+                cdd[4] - cdd[2]) - intersec_map)
         res = res[iou_map_cur < iou_thresh]
 
     return np.array(cdd_results)
 
 
-
 #### -------------------------------如何定义batch的读写方式-------------------------------
 # 默认读写方式
 def default_loader(path):
-	try:
-		img = Image.open(path).convert("RGB")
-		if img is not None:
-			return img
-	except:
-		print("error image:{}".format(path))
+    try:
+        img = Image.open(path).convert("RGB")
+        if img is not None:
+            return img
+    except:
+        print("error image:{}".format(path))
+
 
 def opencv_isvalid(img_path):
-	img_bgr = cv2.imdecode(np.fromfile(img_path, dtype=np.uint8), -1)
-	img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
-	return img_bgr
+    img_bgr = cv2.imdecode(np.fromfile(img_path, dtype=np.uint8), -1)
+    img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+    return img_bgr
 
 
 # 判断图片是否为无效
 def IsValidImage(img_path):
-	vaild = True
-	if img_path.endswith(".tif") or img_path.endswith(".tiff"):
-		vaild = False
-		return vaild
-	try:
-		img = opencv_isvalid(img_path)
-		if img is None:
-			vaild = False
-		return vaild
-	except:
-		vaild = False
-		return vaild
+    vaild = True
+    if img_path.endswith(".tif") or img_path.endswith(".tiff"):
+        vaild = False
+        return vaild
+    try:
+        img = opencv_isvalid(img_path)
+        if img is None:
+            vaild = False
+        return vaild
+    except:
+        vaild = False
+        return vaild
 
 
 class MyDataset(Dataset):
-	def __init__(self, dir_path, transform=None, loader=default_loader):
-		fh, imgs = list(), list()
-		num = 0
-		for root, dirs, files in os.walk(dir_path):
-			for file in files:
-				try:
-					img_path = os.path.join(root+os.sep, file)
-					num += 1
-					if IsValidImage(img_path):
-						fh.append(img_path)
-					else:
-						os.remove(img_path)
+    def __init__(self, dir_path, transform=None, loader=default_loader):
+        fh, imgs = list(), list()
+        num = 0
+        for root, dirs, files in os.walk(dir_path):
+            for file in files:
+                try:
+                    img_path = os.path.join(root + os.sep, file)
+                    num += 1
+                    if IsValidImage(img_path):
+                        fh.append(img_path)
+                    else:
+                        os.remove(img_path)
 
-				except:
-					print("image is broken")
-		print("total images is:{}".format(num))
+                except:
+                    print("image is broken")
+        print("total images is:{}".format(num))
 
-		for line in fh:
-			line = line.strip()
-			imgs.append(line)
+        for line in fh:
+            line = line.strip()
+            imgs.append(line)
 
-		self.imgs = imgs
-		self.transform = transform
-		self.loader = loader
+        self.imgs = imgs
+        self.transform = transform
+        self.loader = loader
 
-	def __getitem__(self, item):
-		fh = self.imgs[item]
-		img = self.loader(fh)
-		if self.transform is not None:
-			img = self.transform(img)
-		return fh, img
+    def __getitem__(self, item):
+        fh = self.imgs[item]
+        img = self.loader(fh)
+        if self.transform is not None:
+            img = self.transform(img)
+        return fh, img
 
-	def __len__(self):
-		return len(self.imgs)
+    def __len__(self):
+        return len(self.imgs)
+
+
 #### -------------------------------如何定义batch的读写方式-------------------------------
 
 
 #### -------------------------------图像模糊的定义-------------------------------
 def variance_of_laplacian(image):
-	return cv2.Laplacian(image, cv2.CV_64f).var()
+    return cv2.Laplacian(image, cv2.CV_64f).var()
+
 
 ## 如何定义接口函数
 def imgQualJudge(img, QA_THRESHOLD):
-	'''
-	:param img:
-	:param QA_THRESHOLD: 越高越清晰
-	:return: 是否模糊，0为模糊，1为清晰
-	'''
+    '''
+    :param img:
+    :param QA_THRESHOLD: 越高越清晰
+    :return: 是否模糊，0为模糊，1为清晰
+    '''
 
-	norheight = 1707
-	norwidth = 1280
-	flag = 0
-	# 筛选尺寸
-	if max(img.shape[0], img.shape[1])<320:
-		flag = '10002'
-		return flag
+    norheight = 1707
+    norwidth = 1280
+    flag = 0
+    # 筛选尺寸
+    if max(img.shape[0], img.shape[1]) < 320:
+        flag = '10002'
+        return flag
 
-	# 模糊筛选部分
-	if img.shape[0] <= img.shape[1]:
-		size1 = (norheight, norwidth)
-		timage = cv2.resize(img, size1)
-	else:
-		size2 = (norwidth, norheight)
-		timage = cv2.resize(img, size2)
+    # 模糊筛选部分
+    if img.shape[0] <= img.shape[1]:
+        size1 = (norheight, norwidth)
+        timage = cv2.resize(img, size1)
+    else:
+        size2 = (norwidth, norheight)
+        timage = cv2.resize(img, size2)
 
-	tgray = cv2.cvtColor(timage, cv2.COLOR_BGR2GRAY)
-	halfgray = tgray[0:int(tgray.shape[0]/2), 0:tgray.shape[1]]
-	norgrayImg = np.zeros(halfgray.shape, np.int8)
-	cv2.normalize(halfgray,norgrayImg,0,255,cv2.NORM_MINMAX)
-	fm = variance_of_laplacian(norgrayImg) #模糊值
-	if fm < QA_THRESHOLD:
-		flag = '10001'
-		return flag
-	return flag
+    tgray = cv2.cvtColor(timage, cv2.COLOR_BGR2GRAY)
+    halfgray = tgray[0:int(tgray.shape[0] / 2), 0:tgray.shape[1]]
+    norgrayImg = np.zeros(halfgray.shape, np.int8)
+    cv2.normalize(halfgray, norgrayImg, 0, 255, cv2.NORM_MINMAX)
+    fm = variance_of_laplacian(norgrayImg)  # 模糊值
+    if fm < QA_THRESHOLD:
+        flag = '10001'
+        return flag
+    return flag
+
 
 def process(img_path):
-	img = Image.open(img_path).convert("RGB")
-	valid = True
-	low_quality = "10001"
-	size_error = "10002"
+    img = Image.open(img_path).convert("RGB")
+    valid = True
+    low_quality = "10001"
+    size_error = "10002"
 
-	flag = imgQualJudge(np.array(img), 5)
-	if flag==low_quality or flag==size_error or not img or 0 in np.asarray(img).shape[:2]:
-		valid = False
+    flag = imgQualJudge(np.array(img), 5)
+    if flag == low_quality or flag == size_error or not img or 0 in np.asarray(img).shape[:2]:
+        valid = False
 
-	return valid
+    return valid
+
+
 #### -------------------------------图像模糊的定义-------------------------------
 
 def build_dict():
-	dict_club = dict()
-	dict_club[0] = ["身份证", 0.999999]
-	dict_club[1] = ["校园卡", 0.890876]
-	return dict_club
+    dict_club = dict()
+    dict_club[0] = ["身份证", 0.999999]
+    dict_club[1] = ["校园卡", 0.890876]
+    return dict_club
 
 
 class Classifier():
-	def __init__(self):
-		self.device = torch.device('cuda')
-		self.class_id_name_dict = build_dict()
-		self.mean = [0.485,0.456,0.406]
-		self.std = [0.229,0.224,0.225]
-		self.input_size = 448
-		self.use_cuda = torch.cuda.is_available()
-		self.model = AttentionNet(topN=4)
-		self.model.eval()
+    def __init__(self):
+        self.device = torch.device('cuda')
+        self.class_id_name_dict = build_dict()
+        self.mean = [0.485, 0.456, 0.406]
+        self.std = [0.229, 0.224, 0.225]
+        self.input_size = 448
+        self.use_cuda = torch.cuda.is_available()
+        self.model = AttentionNet(topN=4)
+        self.model.eval()
 
-		checkpoint = torch.load("./.ckpt")
-		newweights = checkpoint['net_state_dict']
+        checkpoint = torch.load("./.ckpt")
+        newweights = checkpoint['net_state_dict']
 
-		#多卡测试转为单卡
-		new_state_dic = OrderedDict()
-		for k, v in newweights.items():
-			name = k[7:] if k.startwith("module.") else k
-			new_state_dic[name] = v
+        # 多卡测试转为单卡
+        new_state_dic = OrderedDict()
+        for k, v in newweights.items():
+            name = k[7:] if k.startwith("module.") else k
+            new_state_dic[name] = v
 
-		self.model.load_state_dict(new_state_dic)
-		self.model = self.model.to(self.device)
+        self.model.load_state_dict(new_state_dic)
+        self.model = self.model.to(self.device)
 
+    def evalute(self, dir_path):
+        data = MyDataset(dir_path, transform=self.preprocess)
+        dataloader = DataLoader(dataset=data, batch_size=32, num_workers=8)
 
-	def evalute(self, dir_path):
-		data = MyDataset(dir_path, transform=self.preprocess)
-		dataloader = DataLoader(dataset=data, batch_size=32, num_workers=8)
+        self.model.eval()
+        with torch.no_grad():
+            num = 0
+            for i, (data, path) in enumerate(dataloader, 1):
+                data = data.to(self.device)
+                output = self.model(data)
+                for j in range(len(data)):
+                    img_path = path[j]
+                    img_output = output[1][j]
+                    score, label, type = self.postprocess(img_output)
+                    out_dict, score = self.process(score, label, type)
+                    class_id = out_dict["results"]["class2"]["code"]
+                    num += 1
+                    if class_id != '00038':
+                        os.remove(img_path)
+                    else:
+                        continue
 
-		self.model.eval()
-		with torch.no_grad():
-			num = 0
-			for i, (data, path) in enumerate(dataloader,1):
-				data = data.to(self.device)
-				output = self.model(data)
-				for j in range(len(data)):
-					img_path = path[j]
-					img_output = output[1][j]
-					score, label, type = self.postprocess(img_output)
-					out_dict, score = self.process(score, label, type)
-					class_id = out_dict["results"]["class2"]["code"]
-					num+=1
-					if class_id != '00038':
-						os.remove(img_path)
-					else:
-						continue
+    def preprocess(self, img):
+        img = transforms.Resize((600, 600), Image.BILINEAR)(img)
+        img = transforms.CenterCrop(self.input_size)(img)
+        img = transforms.ToTensor()(img)
+        img = transforms.Normalize(self.mean, self.std)
 
-	def preprocess(self, img):
-		img = transforms.Resize((600,600), Image.BILINEAR)(img)
-		img = transforms.CenterCrop(self.input_size)(img)
-		img = transforms.ToTensor()(img)
-		img = transforms.Normalize(self.mean, self.std)
+    def postprocess(self, output):
+        pred_logits = F.softmax(output, dim=0)
+        score, label = pred_logits.max(0)
+        score = score.item()
+        label = label.item()
+        type = self.class_id_name_dict[label][0]
+        return score, label, type
 
-	def postprocess(self, output):
-		pred_logits = F.softmax(output, dim=0)
-		score, label = pred_logits.max(0)
-		score = score.item()
-		label = label.item()
-		type = self.class_id_name_dict[label][0]
-		return score, label, type
+    def process(self, score, label, type):
+        success_code = "200"
+        lower_conf_code = "10008"
 
-	def process(self, score, label, type):
-		success_code = "200"
-		lower_conf_code = "10008"
+        threshold = float(self.class_id_name_dict[label][1])
+        if threshold > 0.99:
+            threshold = 0.99
+        if threshold < 0.9:
+            threshold = 0.9
+        ## 设置查勘图片较低的阈值
+        if label == 38:
+            threshold = 0.5
 
-		threshold = float(self.class_id_name_dict[label][1])
-		if threshold > 0.99:
-			threshold = 0.99
-		if threshold < 0.9:
-			threshold = 0.9
-		## 设置查勘图片较低的阈值
-		if label == 38:
-			threshold = 0.5
-
-		if score > threshold:
-			status_code = success_code
-			pred_label = str(label).zfill(5)
-			print("pred_label:", pred_label)
-			return {"code:": status_code, "message": '图像分类成功',
-					"results": {"class2": {'code': pred_label, 'name': type}}}, score
-		else:
-			status_code = lower_conf_code
-			return {"code:": status_code, "message": '图像分类置信度低，不返回结果',
-					"results": {"class2": {'code': '', 'name': ''}}}, score
+        if score > threshold:
+            status_code = success_code
+            pred_label = str(label).zfill(5)
+            print("pred_label:", pred_label)
+            return {"code:": status_code, "message": '图像分类成功',
+                    "results": {"class2": {'code': pred_label, 'name': type}}}, score
+        else:
+            status_code = lower_conf_code
+            return {"code:": status_code, "message": '图像分类置信度低，不返回结果',
+                    "results": {"class2": {'code': '', 'name': ''}}}, score
 
 
 def class_results(img_dir):
-	Classifier().evalute(img_dir)
+    Classifier().evalute(img_dir)
 
 
 if __name__ == "__main__":
-	pass
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    pass
